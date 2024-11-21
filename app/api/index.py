@@ -5,11 +5,10 @@ from flask_cors import CORS
 import logging
 import time
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder='static',template_folder='templates')
 
 # Enable CORS for all routes
 CORS(app)
-
 # Set the path to the submissions folder (use /tmp for Vercel compatibility)
 UPLOAD_FOLDER = '/tmp/submissions'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the folder exists
@@ -21,7 +20,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Time limit (in seconds)
 TIME_LIMIT = 5
-
+test_cases_path = os.path.join('/tmp', 'test_cases1')
+if not os.path.exists(test_cases_path):
+    os.makedirs(test_cases_path)
+# Copy your test cases into /tmp if they’re stored locally
 @app.route('/')
 def index():
     return render_template('submit_code1.html')
@@ -87,15 +89,15 @@ else
     echo "Compilation succeeded!"
 fi
 
-if [ ! -d "test_cases1" ]; then
-    echo "Error: test_cases1 directory not found."
+if [ ! -d "/tmp/test_cases1" ]; then
+    echo "Error: /tmp/test_cases1 directory not found."
     exit 1
-elif [ -z "$(ls test_cases1/*.in 2>/dev/null)" ]; then
-    echo "Error: No input files found in test_cases1."
+elif [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
+    echo "Error: No input files found in /tmp/test_cases1."
     exit 1
 fi
 
-for input_file in test_cases1/*.in; do
+for input_file in /tmp/test_cases1/*.in; do
     base_name=$(basename "$input_file" .in)
     output_file="test_cases1/$base_name.out"
     /tmp/{base_name} < "$input_file" > /tmp/program_output.txt
