@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Time limit (in seconds)
 TIME_LIMIT = 5
-test_cases_path = os.path.join('/tmp', 'test_cases1')
+test_cases_path = os.path.join(os.getcwd(), 'test_cases1')
 if not os.path.exists(test_cases_path):
     os.makedirs(test_cases_path)
 # Copy your test cases into /tmp if they’re stored locally
@@ -137,6 +137,10 @@ def run_script(script_name):
             timeout=TIME_LIMIT  # Ensure this is the same as the timeout you set
         )
         returncode = result.returncode
+        if result.returncode != 0:
+            with open('/tmp/compile_errors.log', 'r') as f:
+                compile_errors = f.read()
+            return {"success": True, "error": "Compilation failed", "verdict": "Runtime error", "details": compile_errors}
         output = result.stdout + result.stderr
         # Parse test case verdicts if any
         for line in output.splitlines():
