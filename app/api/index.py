@@ -4,6 +4,7 @@ from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
 import logging
 import time
+import shutil
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -23,9 +24,22 @@ logging.basicConfig(level=logging.DEBUG)
 TIME_LIMIT = 5
 
 # Ensure /tmp/test_cases1 exists
-test_cases_path = '/tmp/test_cases1'
-if not os.path.exists(test_cases_path):
-    os.makedirs(test_cases_path)
+local_test_cases_path = os.path.join(os.getcwd(), 'test_cases1')  # Adjust if test cases are elsewhere
+tmp_test_cases_path = '/tmp/test_cases1'
+
+# Ensure /tmp/test_cases1 exists
+if not os.path.exists(tmp_test_cases_path):
+    os.makedirs(tmp_test_cases_path)
+
+# Copy all files from local directory to /tmp/test_cases1
+if os.path.exists(local_test_cases_path):
+    for filename in os.listdir(local_test_cases_path):
+        full_path = os.path.join(local_test_cases_path, filename)
+        if os.path.isfile(full_path):
+            shutil.copy(full_path, tmp_test_cases_path)
+            print(f"Copied {full_path} to {tmp_test_cases_path}")
+else:
+    print(f"Local test cases directory {local_test_cases_path} not found.")
 
 @app.route('/')
 def index():
