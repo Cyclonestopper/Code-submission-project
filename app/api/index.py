@@ -5,10 +5,11 @@ from flask_cors import CORS
 import logging
 import time
 
-app = Flask(__name__,static_folder='static',template_folder='templates')
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Enable CORS for all routes
 CORS(app)
+
 # Set the path to the submissions folder (use /tmp for Vercel compatibility)
 UPLOAD_FOLDER = '/tmp/submissions'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the folder exists
@@ -20,10 +21,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Time limit (in seconds)
 TIME_LIMIT = 5
-test_cases_path = os.path.join(os.getcwd(), 'api', 'test_cases1')
+
+# Ensure /tmp/test_cases1 exists
+test_cases_path = '/tmp/test_cases1'
 if not os.path.exists(test_cases_path):
     os.makedirs(test_cases_path)
-# Copy your test cases into /tmp if they’re stored locally
+
 @app.route('/')
 def index():
     return render_template('submit_code1.html')
@@ -55,15 +58,16 @@ def submit_code():
         script_name = generate_script(file_path)
         try:
             result = run_script(script_name)
-            if result["success"] and result["verdict"]!="TLE" and result["verdict"]!="Runtime error":
-                return jsonify({
-                    "message": "Code submitted and tested successfully!",
-                    "verdict": result.get("verdict")
-                })
-            elif result["success"] and result["verdict"]=="TLE":
-                return jsonify({"message":"Time limit exceeded:  Your code took more than 5 seconds to run","verdict":"TLE"})
-            elif result["success"] and result["verdict"]=="Runtime error":
-                return jsonify ({"message":result["error"],"verdict":result["verdict"]})
+            if result["success"]:
+                if result["verdict"] == "TLE":
+                    return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
+                elif result["verdict"] == "Runtime error":
+                    return jsonify({"message": result["error"], "verdict": "Runtime error"})
+                else:
+                    return jsonify({
+                        "message": "Code submitted and tested successfully!",
+                        "verdict": result.get("verdict")
+                    })
             else:
                 return jsonify({"error": result["error"]}), 500
         except Exception as e:
@@ -99,7 +103,7 @@ fi
 
 for input_file in /tmp/test_cases1/*.in; do
     base_name=$(basename "$input_file" .in)
-    output_file="test_cases1/$base_name.out"
+    output_file="/tmp/test_cases1/$base_name.out"
     /tmp/{base_name} < "$input_file" > /tmp/program_output.txt
 
     if [ $? -ne 0 ]; then
@@ -126,8 +130,8 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
     return script_name
 
 def run_script(script_name):
-    verdict = "Accepted"  # Ensure verdicts is always initialized
-    
+    verdict = "Accepted"  # Ensure verdict is always initialized
+
     try:
         result = subprocess.run(
             ['bash', script_name],
@@ -148,19 +152,19 @@ def run_script(script_name):
                 parts = line.split(":")
                 test_case = parts[0].replace("Test case ", "").strip()
                 verdict1 = parts[1].strip()
-                if (verdict1=="Wrong Answer" and (verdict=="Accepted")):
-                    verdict="Wrong Answer"
-        return {"success":True,"verdict":verdict}
+                if (verdict1 == "Wrong Answer" and verdict == "Accepted"):
+                    verdict = "Wrong Answer"
+        return {"success": True, "verdict": verdict}
     except subprocess.TimeoutExpired as e:
         # Capture timeout exception explicitly
         error_message = "Timeout error: The script took longer than 5 seconds to execute"
         print(error_message)
-        return {"success": True, "error": error_message, "output": "", "verdict": "TLE"}
-    return {"success":True,"error":"Runtime error with return code {returncode}","verdict":"Runtime error"}
- #   except Exception as e:
-  #      # General exception for other types of errors
-   #     error_message = f"Unknown error occurred: {str(e)}"
-    #    print(error_message)
-     #   return {"success": False, "error": error_message}
+        return {"success": True, "error": error_message, "verdict": "TLE"}
+    except Exception as e:
+        # General exception for other types of errors
+        error_message = f"Unknown error occurred: {str(e)}"
+        print(error_message)
+        return {"success": False, "error": error_message, "verdict": "Runtime error"}
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
