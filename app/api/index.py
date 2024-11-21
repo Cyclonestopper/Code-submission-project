@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Time limit (in seconds)
 TIME_LIMIT = 5
-test_cases_path = os.path.join(os.getcwd(), 'test_cases1')
+test_cases_path = os.path.join(os.getcwd(), 'api', 'test_cases1')
 if not os.path.exists(test_cases_path):
     os.makedirs(test_cases_path)
 # Copy your test cases into /tmp if they’re stored locally
