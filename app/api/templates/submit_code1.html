@@ -58,7 +58,7 @@
             // Show loading message while submitting
             document.getElementById('result').innerHTML = "Submitting your code...";
 
-            fetch('https://codesubmissionproject-kwxbwnqze-cyclonestoppers-projects.vercel.app/submit_code1', {
+            fetch('/submit_code1', {
                 method: 'POST',
                 body: formData
             })
