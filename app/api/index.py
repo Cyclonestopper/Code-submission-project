@@ -74,7 +74,7 @@ def submit_code():
             result = run_script(script_name,file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
-                    return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
+                    return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
                 elif result["verdict"]=="Compile error":
@@ -178,7 +178,7 @@ import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
-
+    filename = os.path.basename(file_path)
     try:
         result = subprocess.run(
             ['bash', script_name, file_path],
@@ -194,7 +194,7 @@ def run_script(script_name, file_path):
         
         returncode = result.returncode
         if returncode != 0:
-            return {"success": False, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
+            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
 
         output = result.stdout + result.stderr
         for line in output.splitlines():
@@ -208,14 +208,20 @@ def run_script(script_name, file_path):
         return {"success": True, "verdict": verdict}
 
     except subprocess.TimeoutExpired as e:
-        error_message = f"Timeout error: The script took longer than {TIME_LIMIT} seconds to execute\n{str(e)}"
+        error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
         print(error_message)
-        return {"success": False, "error": error_message, "verdict": "TLE"}
-
+        return {"success": True, "verdict": "TLE", "error": error_message}
+    except subprocess.CalledProcessError as e:
+        error_message = f"Code submitted and tested successfully!"
+        return {
+            "success": True,
+            "verdict": "Runtime error",
+            "error": error_message
+        }
     except Exception as e:
         error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
-        return {"success": False, "error": error_message, "verdict": "Runtime error"}
+        return {"success": True, "error": error_message, "verdict": "Internal error "}
 
 
 if __name__ == '__main__':
