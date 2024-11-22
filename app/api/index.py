@@ -133,7 +133,15 @@ for input_file in /tmp/test_cases1/*.in; do
     fi
 
     # Compare outputs
+    if [ -n "$(tail -c 1 /tmp/program_output.txt)" ]; then
+        echo "" >> /tmp/program_output.txt  # Add a newline if there isn't one
+    fi
+
+    if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
+        echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
+    fi
     diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
+
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
     else
