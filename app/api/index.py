@@ -189,6 +189,24 @@ def run_script(script_name):
         error_message = f"Unknown error occurred: {str(e)}"
         print(error_message)
         return {"success": False, "error": error_message, "verdict": "Runtime error"}
+    except subprocess.CalledProcessError as e:
+        print("Script failed with return code:", e.returncode)
+        print("STDOUT:", e.stdout)
+        print("STDERR:", e.stderr)
+        return {
+            "success": False,
+            "error": f"Script failed with return code {e.returncode}",
+            "stdout": e.stdout,
+            "stderr": e.stderr,
+        }
+    except subprocess.TimeoutExpired as e:
+        print("Script timed out")
+        return {
+            "success": False,
+            "error": "Script execution timed out",
+            "stdout": e.stdout,
+            "stderr": e.stderr,
+        }
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
