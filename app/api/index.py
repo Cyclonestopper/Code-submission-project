@@ -171,7 +171,7 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
 
 import traceback
 
-def run_script(script_name, file_path):
+def run_script(script_name, file_path, TIME_LIMIT=5):
     verdict = "Accepted"  # Ensure verdict is always initialized
 
     try:
@@ -185,11 +185,12 @@ def run_script(script_name, file_path):
         print("Exit code:", result.returncode)
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
-        returncode = result.returncode
-        if returncode != 0:
-            with open('/tmp/compile_errors.log', 'r') as f:
-                compile_errors = f.read()
-            return {"success": True, "error": "Compilation failed", "verdict": "Runtime error", "details": compile_errors}
+
+        # Handle possible compilation failure
+        if result.returncode != 0:
+            error_message = f"Compilation failed with exit code {result.returncode}"
+            return {"success": False, "error": error_message, "verdict": "Runtime error", "details": result.stderr}
+
         output = result.stdout + result.stderr
         # Parse test case verdicts if any
         for line in output.splitlines():
@@ -199,11 +200,22 @@ def run_script(script_name, file_path):
                 verdict1 = parts[1].strip()
                 if verdict1 == "Wrong Answer" and verdict == "Accepted":
                     verdict = "Wrong Answer"
+
         return {"success": True, "verdict": verdict}
+    
     except subprocess.TimeoutExpired as e:
-        error_message = f"Timeout error: The script took longer than 5 seconds to execute\n{str(e)}"
+        error_message = f"Timeout error: The script took longer than {TIME_LIMIT} seconds to execute\n{str(e)}"
         print(error_message)
-        return {"success": True, "error": error_message, "verdict": "TLE"}
+        return {"success": False, "error": error_message, "verdict": "TLE"}
+    
+    except subprocess.CalledProcessError as e:
+        # Handle script failure more explicitly
+        print(f"Script failed with exit code {e.returncode}")
+        print("STDOUT:", e.stdout)
+        print("STDERR:", e.stderr)
+        error_message = f"Script failed with exit code {e.returncode}. Check stderr for details."
+        return {"success": False, "error": error_message, "verdict": "Runtime error", "details": e.stderr}
+    
     except Exception as e:
         error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
