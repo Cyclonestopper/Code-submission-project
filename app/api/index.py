@@ -71,7 +71,7 @@ def submit_code():
 
         script_name = generate_script(file_path)
         try:
-            result = run_script(script_name)
+            result = run_script(script_name,file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
                     return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
@@ -93,12 +93,12 @@ def submit_code():
 def generate_script(file_path):
     filename = os.path.basename(file_path)
     base_name, _ = os.path.splitext(filename)
-    script_name = f"/tmp/{base_name}_runner.sh"  # Use /tmp for script
+    script_name = f"/tmp/{base_name}_runner.sh"
 
     script_content = f"""#!/bin/bash
-echo "Starting compilation of $1"
+echo "Starting compilation of {file_path}"
 
-g++ -std=c++17 -o "/tmp/compiled_program" "$1" 2> /tmp/compile_errors.log
+g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed. Errors:"
@@ -133,7 +133,7 @@ for input_file in /tmp/test_cases1/*.in; do
     fi
 
     # Compare outputs
-    diff "$program_output" "$expected_output" > /dev/null
+    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
     else
@@ -153,19 +153,29 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
     os.chmod(script_name, 0o755)
     return script_name
 
-def run_script(script_name):
+
+    script_name = generate_script(file_path)
+    print(f"Generated script with file path: {script_name}")
+
+    # Print the script contents for debugging purposes
+    with open(script_name, 'r') as f:
+        print(f"Script content: {f.read()}")
+
+import traceback
+
+def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
 
     try:
         result = subprocess.run(
-            ['bash', script_name],
+            ['bash', script_name, file_path],
             check=True,
             capture_output=True,
             text=True,
-            timeout=TIME_LIMIT  # Ensure this is the same as the timeout you set
+            timeout=TIME_LIMIT
         )
         returncode = result.returncode
-        if result.returncode != 0:
+        if returncode != 0:
             with open('/tmp/compile_errors.log', 'r') as f:
                 compile_errors = f.read()
             return {"success": True, "error": "Compilation failed", "verdict": "Runtime error", "details": compile_errors}
@@ -176,37 +186,17 @@ def run_script(script_name):
                 parts = line.split(":")
                 test_case = parts[0].replace("Test case ", "").strip()
                 verdict1 = parts[1].strip()
-                if (verdict1 == "Wrong Answer" and verdict == "Accepted"):
+                if verdict1 == "Wrong Answer" and verdict == "Accepted":
                     verdict = "Wrong Answer"
         return {"success": True, "verdict": verdict}
     except subprocess.TimeoutExpired as e:
-        # Capture timeout exception explicitly
-        error_message = "Timeout error: The script took longer than 5 seconds to execute"
+        error_message = f"Timeout error: The script took longer than 5 seconds to execute\n{str(e)}"
         print(error_message)
         return {"success": True, "error": error_message, "verdict": "TLE"}
     except Exception as e:
-        # General exception for other types of errors
-        error_message = f"Unknown error occurred: {str(e)}"
+        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
         return {"success": False, "error": error_message, "verdict": "Runtime error"}
-    except subprocess.CalledProcessError as e:
-        print("Script failed with return code:", e.returncode)
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
-        return {
-            "success": False,
-            "error": f"Script failed with return code {e.returncode}",
-            "stdout": e.stdout,
-            "stderr": e.stderr,
-        }
-    except subprocess.TimeoutExpired as e:
-        print("Script timed out")
-        return {
-            "success": False,
-            "error": "Script execution timed out",
-            "stdout": e.stdout,
-            "stderr": e.stderr,
-        }
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
