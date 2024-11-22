@@ -17,6 +17,24 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the folder exists
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DEBUG'] = True  # Enable debug mode
 
+source_path = "/var/task/test_cases1"  # Path in the read-only environment
+dest_path = "/tmp/test_cases1"
+test_cases_path = "/tmp/test_cases1"
+if os.path.exists(test_cases_path):
+    shutil.rmtree(test_cases_path)  # Remove the entire directory
+
+os.makedirs(test_cases_path, exist_ok=True)  # Recreate it with correct permissions
+if not os.path.exists(dest_path):
+    os.makedirs(dest_path)
+
+for file_name in os.listdir(source_path):
+    full_source_path = os.path.join(source_path, file_name)
+    if os.path.isfile(full_source_path):  # Only copy files, skip directories
+        shutil.copy(full_source_path, dest_path)
+        os.chmod(os.path.join(dest_path, file_name), 0o644)  # Ensure proper permissions
+
+
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
