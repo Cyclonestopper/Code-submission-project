@@ -96,44 +96,54 @@ def generate_script(file_path):
     script_name = f"/tmp/{base_name}_runner.sh"  # Use /tmp for script
 
     script_content = f"""#!/bin/bash
-echo "Starting compilation of {file_path}"
-g++ -std=c++17 -o "/tmp/{base_name}" "{file_path}" 2> /tmp/compile_errors.log
+echo "Starting compilation of $1"
+
+g++ -std=c++17 -o "/tmp/compiled_program" "$1" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
-    echo "Compilation failed! See /tmp/compile_errors.log for details."
+    echo "Compilation failed. Errors:"
     cat /tmp/compile_errors.log
     exit 1
-else
-    echo "Compilation succeeded!"
 fi
 
+echo "Compilation succeeded."
+
+# Check for test cases directory
 if [ ! -d "/tmp/test_cases1" ]; then
     echo "Error: /tmp/test_cases1 directory not found."
     exit 1
-elif [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
+fi
+
+if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
     echo "Error: No input files found in /tmp/test_cases1."
     exit 1
 fi
 
 for input_file in /tmp/test_cases1/*.in; do
+    echo "Running test case: $input_file"
     base_name=$(basename "$input_file" .in)
-    output_file="/tmp/test_cases1/$base_name.out"
-    /tmp/{base_name} < "$input_file" > /tmp/program_output.txt
+    expected_output="/tmp/test_cases1/$base_name.out"
+    program_output="/tmp/program_output.txt"
+
+    /tmp/compiled_program < "$input_file" > "$program_output"
 
     if [ $? -ne 0 ]; then
-        echo "Runtime error for test case $input_file."
+        echo "Runtime error for test case: $input_file"
         exit 1
     fi
 
-    program_output=$(cat /tmp/program_output.txt | sed 's/^\xEF\xBB\xBF//' | sed 's/[[:space:]]*$//')
-    expected_output=$(cat "$output_file" | sed 's/^\xEF\xBB\xBF//' | sed 's/[[:space:]]*$//')
-
-    if [ "$program_output" == "$expected_output" ]; then
+    # Compare outputs
+    diff "$program_output" "$expected_output" > /dev/null
+    if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
     else
         echo "Test case $input_file: Wrong Answer"
     fi
 done
+
+echo "All test cases completed successfully."
+exit 0
+
 
 rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
 """
