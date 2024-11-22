@@ -77,6 +77,8 @@ def submit_code():
                     return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
+                elif result["verdict"]=="Compile error":
+                    return jsonify({"message":"Compilation failed","verdict":"Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
@@ -98,7 +100,7 @@ def generate_script(file_path):
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
 chmod +x /tmp/compiled_program
-g++ -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
+g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed. Errors:"
@@ -171,7 +173,10 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
 
 import traceback
 
-def run_script(script_name, file_path, TIME_LIMIT=5):
+import subprocess
+import traceback
+
+def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
 
     try:
@@ -182,17 +187,16 @@ def run_script(script_name, file_path, TIME_LIMIT=5):
             text=True,
             timeout=TIME_LIMIT
         )
-        print("Exit code:", result.returncode)
+
+        # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
-
-        # Handle possible compilation failure
-        if result.returncode != 0:
-            error_message = f"Compilation failed with exit code {result.returncode}"
-            return {"success": False, "error": error_message, "verdict": "Runtime error", "details": result.stderr}
+        
+        returncode = result.returncode
+        if returncode != 0:
+            return {"success": False, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
 
         output = result.stdout + result.stderr
-        # Parse test case verdicts if any
         for line in output.splitlines():
             if "Test case" in line and ":" in line:
                 parts = line.split(":")
@@ -200,26 +204,19 @@ def run_script(script_name, file_path, TIME_LIMIT=5):
                 verdict1 = parts[1].strip()
                 if verdict1 == "Wrong Answer" and verdict == "Accepted":
                     verdict = "Wrong Answer"
-
+                    
         return {"success": True, "verdict": verdict}
-    
+
     except subprocess.TimeoutExpired as e:
         error_message = f"Timeout error: The script took longer than {TIME_LIMIT} seconds to execute\n{str(e)}"
         print(error_message)
         return {"success": False, "error": error_message, "verdict": "TLE"}
-    
-    except subprocess.CalledProcessError as e:
-        # Handle script failure more explicitly
-        print(f"Script failed with exit code {e.returncode}")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
-        error_message = f"Script failed with exit code {e.returncode}. Check stderr for details."
-        return {"success": False, "error": error_message, "verdict": "Runtime error", "details": e.stderr}
-    
+
     except Exception as e:
         error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
         return {"success": False, "error": error_message, "verdict": "Runtime error"}
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
