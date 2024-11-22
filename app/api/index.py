@@ -182,6 +182,9 @@ def run_script(script_name, file_path):
             text=True,
             timeout=TIME_LIMIT
         )
+        print("Exit code:", result.returncode)
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
         returncode = result.returncode
         if returncode != 0:
             with open('/tmp/compile_errors.log', 'r') as f:
