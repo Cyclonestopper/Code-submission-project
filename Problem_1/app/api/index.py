@@ -45,6 +45,10 @@ else:
 def index():
     return render_template('submit_code1.html')
 
+@app.route('/Problem_1')
+def problem_1():
+    return render_template('submit_code1.html')  # You can create separate templates for different problems if needed.
+
 @app.route('/submit_code1', methods=['POST'])
 def submit_code():
     if 'code_file' not in request.files:
@@ -71,14 +75,14 @@ def submit_code():
 
         script_name = generate_script(file_path)
         try:
-            result = run_script(script_name,file_path)
+            result = run_script(script_name, file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
                     return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
-                elif result["verdict"]=="Compile error":
-                    return jsonify({"message":"Compilation failed","verdict":"Compilation error"})
+                elif result["verdict"] == "Compile error":
+                    return jsonify({"message": "Compilation failed", "verdict": "Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
@@ -163,17 +167,6 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
     os.chmod(script_name, 0o755)
     return script_name
 
-
-    script_name = generate_script(file_path)
-    print(f"Generated script with file path: {script_name}")
-
-    # Print the script contents for debugging purposes
-    with open(script_name, 'r') as f:
-        print(f"Script content: {f.read()}")
-
-import traceback
-
-import subprocess
 import traceback
 
 def run_script(script_name, file_path):
