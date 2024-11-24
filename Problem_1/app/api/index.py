@@ -6,7 +6,7 @@ import logging
 import time
 import shutil
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
+app = Flask(__name__, static_folder='/Problem_1/app/api/static', template_folder='/Problem_1/app/api/templates')
 
 # Enable CORS for all routes
 CORS(app)
@@ -218,4 +218,4 @@ def run_script(script_name, file_path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+    app.run(host='0.0.0.0', port=3000) 
