@@ -13,7 +13,7 @@
   "routes": [
     {
       "src": "/",
-      "dest": "home.html"
+      "dest": "Problem_1/app/api/index.py"
     },
     {
       "src": "/Problem_1",
