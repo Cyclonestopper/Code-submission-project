@@ -11,22 +11,10 @@
     }
   ],
   "routes": [
-    {
-      "src": "/",
-      "dest": "Problem_1/app/api/index.py"
-    },
-    {
-      "src": "/Problem_1",
-      "dest": "Problem_1/app/api/index.py"
-    },
-    {
-      "src": "/submit_code1",
-      "dest": "Problem_1/app/api/index.py"
-    },
-    {
-      "src": "/Problem_1/(.*)",
-      "dest": "Problem_1/app/api/index.py"
-    },
-    { "src": "/home", "dest": "Problem_1/app/api/index.py" }
+    { "src": "/", "dest": "Problem_1/app/api/index.py" },
+    { "src": "/Problem_1", "dest": "Problem_1/app/api/index.py" },
+    { "src": "/submit_code1", "dest": "Problem_1/app/api/index.py" },
+    { "src": "/Problem_2", "dest": "Problem_1/app/api/index.py" },
+    { "src": "/submit_code2", "dest": "Problem_1/app/api/index.py" }
   ]
 }
