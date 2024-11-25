@@ -47,8 +47,8 @@ else:
     print(f"Local test cases directory {local_test_cases_path} not found.")
 
 @app.route('/')
-def index():
-    return render_template('submit_code1.html')
+def home():
+    return render_template('home.html')
 
 @app.route('/Problem_1')
 def problem_1():
