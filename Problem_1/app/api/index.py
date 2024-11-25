@@ -6,7 +6,12 @@ import logging
 import time
 import shutil
 
-app = Flask(__name__, static_folder='/Problem_1/app/api/static', template_folder='/Problem_1/app/api/templates')
+app = Flask(
+    __name__,
+    static_folder='static',  # Relative to index.py
+    template_folder='templates'  # Relative to index.py
+)
+
 
 # Enable CORS for all routes
 CORS(app)

@@ -8,8 +8,21 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/",
       "dest": "Problem_1/app/api/index.py"
+    },
+    {
+      "src": "/Problem_1",
+      "dest": "Problem_1/app/api/index.py"
+    },
+    {
+      "src": "/Problem_1/(.*)",
+      "dest": "Problem_1/app/api/index.py"
+    },
+    {
+      "src": "Problem_1/app/api/index.py",
+      "use": "@vercel/python",
+      "config": { "runtime": "python3.9" }
     }
   ]
 }
