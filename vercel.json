@@ -12,17 +12,16 @@
       "dest": "Problem_1/app/api/index.py"
     },
     {
+      "src": "/submit_code1",
+      "dest": "Problem_1/app/api/index.py"
+    },
+    {
       "src": "/Problem_1",
       "dest": "Problem_1/app/api/index.py"
     },
     {
       "src": "/Problem_1/(.*)",
       "dest": "Problem_1/app/api/index.py"
-    },
-    {
-      "src": "Problem_1/app/api/index.py",
-      "use": "@vercel/python",
-      "config": { "runtime": "python3.9" }
     }
   ]
 }
