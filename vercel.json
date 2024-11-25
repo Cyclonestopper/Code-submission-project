@@ -26,6 +26,7 @@
     {
       "src": "/Problem_1/(.*)",
       "dest": "Problem_1/app/api/index.py"
-    }
+    },
+    { "src": "/home", "dest": "Problem_1/app/api/index.py" }
   ]
 }
