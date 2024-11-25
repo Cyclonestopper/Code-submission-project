@@ -20,6 +20,10 @@
       "dest": "Problem_1/app/api/index.py"
     },
     {
+      "src": "/submit_code1",
+      "dest": "Problem_1/app/api/index.py"
+    },
+    {
       "src": "/Problem_1/(.*)",
       "dest": "Problem_1/app/api/index.py"
     }
