@@ -77,7 +77,7 @@ def submit_code():
             if "#include <bits/stdc++.h>" in file_content:
                 return jsonify({"error": "File contains bits/stdc++.h header, which is not valid"}), 400
 
-        script_name = generate_script(file_path)
+        script_name = generate_script(file_path,'/tmp/test_cases1')
         try:
             result = run_script(script_name, file_path)
             if result["success"]:
@@ -126,7 +126,7 @@ def submit_code2():
             if "#include <bits/stdc++.h>" in file_content:
                 return jsonify({"error": "File contains bits/stdc++.h header, which is not valid"}), 400
 
-        script_name = generate_script(file_path, "test_cases2")  # Pass the test cases folder for Problem 2
+        script_name = generate_script(file_path, "/tmp/test_cases2")  # Pass the test cases folder for Problem 2
         try:
             result = run_script(script_name, file_path)
             if result["success"]:
