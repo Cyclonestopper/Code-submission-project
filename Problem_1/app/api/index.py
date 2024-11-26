@@ -233,7 +233,6 @@ def run_script(script_name, file_path):
         # Run the script
         result = subprocess.run(
             ['bash', script_name, file_path],
-            check=True,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT  # Enforce the time limit
