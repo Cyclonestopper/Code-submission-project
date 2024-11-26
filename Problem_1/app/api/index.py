@@ -156,8 +156,8 @@ def generate_script(file_path, test_cases_dir):
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
-chmod +x /tmp/compiled_program
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
+chmod +x /tmp/compiled_program
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed. Errors:"
