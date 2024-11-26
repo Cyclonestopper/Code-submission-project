@@ -233,6 +233,7 @@ def run_script(script_name, file_path):
         # Run the script
         result = subprocess.run(
             ['bash', script_name, file_path],
+            check=False,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT  # Enforce the time limit
@@ -274,7 +275,7 @@ def run_script(script_name, file_path):
 
     except subprocess.CalledProcessError as e:
         # Handle runtime errors (e.g., non-zero exit codes)
-        error_message = f"Runtime error: {e.stderr or 'No specific error message provided.'}"
+        error_message = f"Runtime error, command exited with non-zero status"
         print(error_message)  # Debug
         return {
             "success": True,
