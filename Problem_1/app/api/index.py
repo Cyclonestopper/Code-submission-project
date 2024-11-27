@@ -42,11 +42,9 @@ else:
     print(f"Local test cases directory {local_test_cases_path} not found.")
 
 @app.route('/')
-def home():
-    return render_template('home.html')
-@app.route('/Problem_1')
-def problem_1():
-    return render_templated('submit_code1.html')
+def index():
+    return render_template('submit_code1.html')
+
 @app.route('/submit_code1', methods=['POST'])
 def submit_code():
     if 'code_file' not in request.files:
