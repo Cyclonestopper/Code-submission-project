@@ -6,12 +6,7 @@ import logging
 import time
 import shutil
 
-app = Flask(
-    __name__,
-    static_folder='static',  # Relative to index.py
-    template_folder='templates'  # Relative to index.py
-)
-
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Enable CORS for all routes
 CORS(app)
@@ -28,15 +23,32 @@ logging.basicConfig(level=logging.DEBUG)
 # Time limit (in seconds)
 TIME_LIMIT = 5
 
+# Ensure /tmp/test_cases2 exists
+local_test_cases_path = os.path.join(os.getcwd(), 'test_cases2')  # Adjust if test cases are elsewhere
+tmp_test_cases_path = '/tmp/test_cases2'
+
+# Ensure /tmp/test_cases2 exists
+if not os.path.exists(tmp_test_cases_path):
+    os.makedirs(tmp_test_cases_path)
+
+# Copy all files from local directory to /tmp/test_cases2
+if os.path.exists(local_test_cases_path):
+    for filename in os.listdir(local_test_cases_path):
+        full_path = os.path.join(local_test_cases_path, filename)
+        if os.path.isfile(full_path):
+            shutil.copy(full_path, tmp_test_cases_path)
+            print(f"Copied {full_path} to {tmp_test_cases_path}")
+else:
+    print(f"Local test cases directory {local_test_cases_path} not found.")
+
 @app.route('/')
 def home():
     return render_template('home.html')
 @app.route('/Problem_2')
 def problem_2():
-    return render_template('submit_code2.html')  # Template for Problem 2
-
+    return render_template('submit_code2.html')
 @app.route('/submit_code2', methods=['POST'])
-def submit_code2():
+def submit_code():
     if 'code_file' not in request.files:
         return jsonify({"error": "No file part"}), 400
 
@@ -59,16 +71,16 @@ def submit_code2():
             if "#include <bits/stdc++.h>" in file_content:
                 return jsonify({"error": "File contains bits/stdc++.h header, which is not valid"}), 400
 
-        script_name = generate_script(file_path, "/tmp/test_cases2")  # Pass the test cases folder for Problem 2
+        script_name = generate_script(file_path)
         try:
-            result = run_script(script_name, file_path)
+            result = run_script(script_name,file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
-                    return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
+                    return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
-                elif result["verdict"] == "Compile error":
-                    return jsonify({"message": "Compilation failed", "verdict": "Compilation error"})
+                elif result["verdict"]=="Compile error":
+                    return jsonify({"message":"Compilation failed","verdict":"Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
@@ -82,13 +94,14 @@ def submit_code2():
         return jsonify({"error": "Invalid file type. Only .cpp files are allowed."}), 400
 
 # Generate the bash script to compile and run the C++ code
-def generate_script(file_path, test_cases_dir):
+def generate_script(file_path):
     filename = os.path.basename(file_path)
     base_name, _ = os.path.splitext(filename)
     script_name = f"/tmp/{base_name}_runner.sh"
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
+chmod +x /tmp/compiled_program
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
@@ -97,7 +110,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chmod +x /tmp/compiled_program
 echo "Compilation succeeded."
 
 # Check for test cases directory
@@ -136,15 +148,17 @@ for input_file in /tmp/test_cases2/*.in; do
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
-    else:
+    else
         echo "Test case $input_file: Wrong Answer"
     fi
 done
 
 echo "All test cases completed successfully."
 exit 0
-"""
 
+
+rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
+"""
     with open(script_name, 'w') as f:
         f.write(script_content)
 
@@ -152,76 +166,56 @@ exit 0
     return script_name
 
 
+    script_name = generate_script(file_path)
+    print(f"Generated script with file path: {script_name}")
+
+    # Print the script contents for debugging purposes
+    with open(script_name, 'r') as f:
+        print(f"Script content: {f.read()}")
+
+import traceback
+
+import subprocess
 import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
-    filename = os.path.basename(file_path)
-    
+
     try:
-        # Debug: Print script name and file path
-        print(f"Running script: {script_name}")
-        print(f"File path: {file_path}")
-        
-        # Run the script
         result = subprocess.run(
             ['bash', script_name, file_path],
-            check=False,
+            check=True,
             capture_output=True,
             text=True,
-            timeout=TIME_LIMIT  # Enforce the time limit
+            timeout=TIME_LIMIT
         )
 
-        # Debug: Log the outputs
+        # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
+        
+        returncode = result.returncode
+        if returncode != 0:
+            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
 
-        # Check return code
-        if result.returncode != 0:
-            return {
-                "success": True,
-                "error": f"Non-zero exit code: {result.returncode}\nDetails: {result.stderr.strip()}",
-                "verdict": "Runtime error",
-            }
-
-
-        # Process script output
         output = result.stdout + result.stderr
         for line in output.splitlines():
             if "Test case" in line and ":" in line:
-                print(f"Parsing line: {line}")  # Debug: Log each line being parsed
                 parts = line.split(":")
-                if len(parts) < 2:
-                    raise ValueError(f"Invalid line format: {line}")
                 test_case = parts[0].replace("Test case ", "").strip()
                 verdict1 = parts[1].strip()
                 if verdict1 == "Wrong Answer" and verdict == "Accepted":
                     verdict = "Wrong Answer"
-
+                    
         return {"success": True, "verdict": verdict}
 
     except subprocess.TimeoutExpired as e:
-        # Handle time limit exceeded (TLE)
-        error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
-        print(error_message)  # Debug
-        return {"success": True, "verdict": "TLE", "error": error_message}
-
-    except subprocess.CalledProcessError as e:
-        # Handle runtime errors (e.g., non-zero exit codes)
-        error_message = f"Runtime error, command exited with non-zero status"
-        print(error_message)  # Debug
-        return {
-            "success": True,
-            "verdict": "Runtime error",
-            "error": error_message,
-        }
-
+        return {"success": True, "verdict": "TLE"}
     except Exception as e:
-        # Handle unexpected errors
         error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
-        print(error_message)  # Debug
-        return {"success": False, "error": error_message, "verdict": "Internal error"}
+        print(error_message)
+        return {"success": True, "error": error_message, "verdict": "Runtime error"}
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000) 
+    app.run(host='0.0.0.0', port=3000)
