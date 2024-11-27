@@ -6,12 +6,7 @@ import logging
 import time
 import shutil
 
-app = Flask(
-    __name__,
-    static_folder='static',  # Relative to index.py
-    template_folder='templates'  # Relative to index.py
-)
-
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Enable CORS for all routes
 CORS(app)
@@ -29,29 +24,26 @@ logging.basicConfig(level=logging.DEBUG)
 TIME_LIMIT = 5
 
 # Ensure /tmp/test_cases1 exists
+local_test_cases_path = os.path.join(os.getcwd(), 'test_cases1')  # Adjust if test cases are elsewhere
+tmp_test_cases_path = '/tmp/test_cases1'
+
+# Ensure /tmp/test_cases1 exists
+if not os.path.exists(tmp_test_cases_path):
+    os.makedirs(tmp_test_cases_path)
+
 # Copy all files from local directory to /tmp/test_cases1
-for folder_name in ["test_cases1", "test_cases2"]:
-    local_test_cases_path = os.path.join(os.getcwd(), folder_name)
-    tmp_test_cases_path = f"/tmp/{folder_name}"
-
-    if not os.path.exists(tmp_test_cases_path):
-        os.makedirs(tmp_test_cases_path)
-
-    if os.path.exists(local_test_cases_path):
-        for filename in os.listdir(local_test_cases_path):
-            full_path = os.path.join(local_test_cases_path, filename)
-            if os.path.isfile(full_path):
-                shutil.copy(full_path, tmp_test_cases_path)
-                print(f"Copied {full_path} to {tmp_test_cases_path}")
-    else:
-        print(f"Local test cases directory {local_test_cases_path} not found.")
+if os.path.exists(local_test_cases_path):
+    for filename in os.listdir(local_test_cases_path):
+        full_path = os.path.join(local_test_cases_path, filename)
+        if os.path.isfile(full_path):
+            shutil.copy(full_path, tmp_test_cases_path)
+            print(f"Copied {full_path} to {tmp_test_cases_path}")
+else:
+    print(f"Local test cases directory {local_test_cases_path} not found.")
 
 @app.route('/')
-def home():
-    return render_template('home.html')
-@app.route('/Problem_1')
-def problem_1():
-    return render_template('submit_code1.html')  # You can create separate templates for different problems if needed.
+def index():
+    return render_template('submit_code1.html')
 
 @app.route('/submit_code1', methods=['POST'])
 def submit_code():
@@ -77,16 +69,16 @@ def submit_code():
             if "#include <bits/stdc++.h>" in file_content:
                 return jsonify({"error": "File contains bits/stdc++.h header, which is not valid"}), 400
 
-        script_name = generate_script(file_path,'/tmp/test_cases1')
+        script_name = generate_script(file_path)
         try:
-            result = run_script(script_name, file_path)
+            result = run_script(script_name,file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
-                    return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
+                    return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
-                elif result["verdict"] == "Compile error":
-                    return jsonify({"message": "Compilation failed", "verdict": "Compilation error"})
+                elif result["verdict"]=="Compile error":
+                    return jsonify({"message":"Compilation failed","verdict":"Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
@@ -98,14 +90,16 @@ def submit_code():
             return jsonify({"error": str(e)}), 500
     else:
         return jsonify({"error": "Invalid file type. Only .cpp files are allowed."}), 400
+
 # Generate the bash script to compile and run the C++ code
-def generate_script(file_path, test_cases_dir):
+def generate_script(file_path):
     filename = os.path.basename(file_path)
     base_name, _ = os.path.splitext(filename)
     script_name = f"/tmp/{base_name}_runner.sh"
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
+chmod +x /tmp/compiled_program
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
@@ -114,7 +108,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chmod +x /tmp/compiled_program
 echo "Compilation succeeded."
 
 # Check for test cases directory
@@ -153,15 +146,17 @@ for input_file in /tmp/test_cases1/*.in; do
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
-    else:
+    else
         echo "Test case $input_file: Wrong Answer"
     fi
 done
 
 echo "All test cases completed successfully."
 exit 0
-"""
 
+
+rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
+"""
     with open(script_name, 'w') as f:
         f.write(script_content)
 
@@ -169,12 +164,21 @@ exit 0
     return script_name
 
 
+    script_name = generate_script(file_path)
+    print(f"Generated script with file path: {script_name}")
+
+    # Print the script contents for debugging purposes
+    with open(script_name, 'r') as f:
+        print(f"Script content: {f.read()}")
+
+import traceback
+
+import subprocess
 import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
-    filename = os.path.basename(file_path)
-    
+
     try:
         result = subprocess.run(
             ['bash', script_name, file_path],
@@ -184,41 +188,32 @@ def run_script(script_name, file_path):
             timeout=TIME_LIMIT
         )
 
-        # Process the output
+        # Printing both stdout and stderr
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
+        
         returncode = result.returncode
         if returncode != 0:
-            return {
-                "success": False,
-                "error": result.stderr,
-                "verdict": "Runtime error"
-            }
-        # Analyze script output for verdict
-        return {"success": True, "verdict": "Accepted"}
+            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
+
+        output = result.stdout + result.stderr
+        for line in output.splitlines():
+            if "Test case" in line and ":" in line:
+                parts = line.split(":")
+                test_case = parts[0].replace("Test case ", "").strip()
+                verdict1 = parts[1].strip()
+                if verdict1 == "Wrong Answer" and verdict == "Accepted":
+                    verdict = "Wrong Answer"
+                    
+        return {"success": True, "verdict": verdict}
 
     except subprocess.TimeoutExpired as e:
-        return {
-            "success": False,
-            "error": "The script took too long to execute.",
-            "verdict": "TLE"
-        }
-
-    except subprocess.CalledProcessError as e:
-        return {
-            "success": False,
-            "error": f"Script failed with error: {e.stderr}",
-            "verdict": "Runtime error"
-        }
-
+        return {"success": True, "verdict": "TLE"}
     except Exception as e:
-        error_message = f"Unexpected error occurred: {str(e)}\n{traceback.format_exc()}"
+        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
-        return {
-            "success": False,
-            "error": error_message,
-            "verdict": "Unknown error"
-        }
-
+        return {"success": True, "error": error_message, "verdict": "Runtime error"}
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000) 
+    app.run(host='0.0.0.0', port=3000)
