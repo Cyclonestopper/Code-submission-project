@@ -101,14 +101,17 @@ def generate_script(file_path):
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
-chmod +x /tmp/compiled_program
+
+# Compile the C++ file
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
+# Check if compilation succeeded
 if [ $? -ne 0 ]; then
     echo "Compilation failed. Errors:"
     cat /tmp/compile_errors.log
     exit 1
 fi
+chmod +x /tmp/compiled_program  # Set executable permissions only if compilation succeeded
 
 echo "Compilation succeeded."
 
@@ -118,11 +121,13 @@ if [ ! -d "/tmp/test_cases1" ]; then
     exit 1
 fi
 
+# Check for input files
 if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
     echo "Error: No input files found in /tmp/test_cases1."
     exit 1
 fi
 
+# Run the program with each input file
 for input_file in /tmp/test_cases1/*.in; do
     echo "Running test case: $input_file"
     base_name=$(basename "$input_file" .in)
@@ -136,15 +141,12 @@ for input_file in /tmp/test_cases1/*.in; do
         exit 1
     fi
 
-    # Compare outputs
-    if [ -n "$(tail -c 1 /tmp/program_output.txt)" ]; then
-        echo "" >> /tmp/program_output.txt  # Add a newline if there isn't one
-    fi
+    # Add trailing newlines if missing
+    sed -i -e '$a' /tmp/program_output.txt
+    sed -i -e '$a' "$expected_output"
 
-    if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
-        echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
-    fi
-    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
+    # Compare program output with expected output
+    diff -b -w /tmp/program_output.txt "$expected_output"
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
@@ -156,8 +158,8 @@ done
 echo "All test cases completed successfully."
 exit 0
 
-
-rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
+# Clean up files
+rm -f /tmp/compiled_program /tmp/program_output.txt /tmp/compile_errors.log
 """
     with open(script_name, 'w') as f:
         f.write(script_content)
@@ -165,13 +167,6 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
     os.chmod(script_name, 0o755)
     return script_name
 
-
-    script_name = generate_script(file_path)
-    print(f"Generated script with file path: {script_name}")
-
-    # Print the script contents for debugging purposes
-    with open(script_name, 'r') as f:
-        print(f"Script content: {f.read()}")
 
 import traceback
 
