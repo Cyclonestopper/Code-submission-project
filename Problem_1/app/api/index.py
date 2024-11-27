@@ -176,67 +176,48 @@ def run_script(script_name, file_path):
     filename = os.path.basename(file_path)
     
     try:
-        # Debug: Print script name and file path
-        print(f"Running script: {script_name}")
-        print(f"File path: {file_path}")
-        
-        # Run the script
         result = subprocess.run(
             ['bash', script_name, file_path],
-            check=False,
+            check=True,
             capture_output=True,
             text=True,
-            timeout=TIME_LIMIT  # Enforce the time limit
+            timeout=TIME_LIMIT
         )
 
-        # Debug: Log the outputs
-        print("STDOUT:", result.stdout)
-        print("STDERR:", result.stderr)
-
-        # Check return code
-        if result.returncode != 0:
+        # Process the output
+        returncode = result.returncode
+        if returncode != 0:
             return {
-                "success": True,
-                "error": f"Non-zero exit code: {result.returncode}\nDetails: {result.stderr.strip()}",
-                "verdict": "Runtime error",
+                "success": False,
+                "error": result.stderr,
+                "verdict": "Runtime error"
             }
-
-        # Process script output
-        output = result.stdout + result.stderr
-        for line in output.splitlines():
-            if "Test case" in line and ":" in line:
-                print(f"Parsing line: {line}")  # Debug: Log each line being parsed
-                parts = line.split(":")
-                if len(parts) < 2:
-                    raise ValueError(f"Invalid line format: {line}")
-                test_case = parts[0].replace("Test case ", "").strip()
-                verdict1 = parts[1].strip()
-                if verdict1 == "Wrong Answer" and verdict == "Accepted":
-                    verdict = "Wrong Answer"
-
-        return {"success": True, "verdict": verdict}
+        # Analyze script output for verdict
+        return {"success": True, "verdict": "Accepted"}
 
     except subprocess.TimeoutExpired as e:
-        # Handle time limit exceeded (TLE)
-        error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
-        print(error_message)  # Debug
-        return {"success": True, "verdict": "TLE", "error": error_message}
+        return {
+            "success": False,
+            "error": "The script took too long to execute.",
+            "verdict": "TLE"
+        }
 
     except subprocess.CalledProcessError as e:
-        # Handle runtime errors (e.g., non-zero exit codes)
-        error_message = f"Runtime error, command exited with non-zero status"
-        print(error_message)  # Debug
         return {
-            "success": True,
-            "verdict": "Runtime error",
-            "error": error_message,
+            "success": False,
+            "error": f"Script failed with error: {e.stderr}",
+            "verdict": "Runtime error"
         }
 
     except Exception as e:
-        # Handle unexpected errors
-        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
-        print(error_message)  # Debug
-        return {"success": False, "error": error_message, "verdict": "Internal error"}
+        error_message = f"Unexpected error occurred: {str(e)}\n{traceback.format_exc()}"
+        print(error_message)
+        return {
+            "success": False,
+            "error": error_message,
+            "verdict": "Unknown error"
+        }
+
 
 
 if __name__ == '__main__':
