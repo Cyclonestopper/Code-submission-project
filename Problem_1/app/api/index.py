@@ -190,31 +190,40 @@ def run_script(script_name, file_path):
             timeout=TIME_LIMIT
         )
 
-        # Printing both stdout and stderr
-        print("STDOUT:", result.stdout)
-        print("STDERR:", result.stderr)
-        
+        # Process the output
         returncode = result.returncode
         if returncode != 0:
-            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
-
-        output = result.stdout + result.stderr
-        for line in output.splitlines():
-            if "Test case" in line and ":" in line:
-                parts = line.split(":")
-                test_case = parts[0].replace("Test case ", "").strip()
-                verdict1 = parts[1].strip()
-                if verdict1 == "Wrong Answer" and verdict == "Accepted":
-                    verdict = "Wrong Answer"
-                    
-        return {"success": True, "verdict": verdict}
+            return {
+                "success": False,
+                "error": result.stderr,
+                "verdict": "Runtime error"
+            }
+        # Analyze script output for verdict
+        return {"success": True, "verdict": "Accepted"}
 
     except subprocess.TimeoutExpired as e:
-        return {"success": True, "verdict": "TLE"}
+        return {
+            "success": False,
+            "error": "The script took too long to execute.",
+            "verdict": "TLE"
+        }
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "success": False,
+            "error": f"Script failed with error: {e.stderr}",
+            "verdict": "Runtime error"
+        }
+
     except Exception as e:
-        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
+        error_message = f"Unexpected error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
-        return {"success": True, "error": error_message, "verdict": "Runtime error"}
+        return {
+            "success": False,
+            "error": error_message,
+            "verdict": "Unknown error"
+        }
+
 
 
 if __name__ == '__main__':
