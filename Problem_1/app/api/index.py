@@ -22,16 +22,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Time limit (in seconds)
 TIME_LIMIT = 5
+TEST_CASES_DIR="~/Downloads/code_submission_project/Problem_1/app/api/test_cases1"
 
-# Ensure /tmp/test_cases1 exists
+# Ensure TEST_CASES_DIR exists
 local_test_cases_path = os.path.join(os.getcwd(), 'test_cases1')  # Adjust if test cases are elsewhere
-tmp_test_cases_path = '/tmp/test_cases1'
+tmp_test_cases_path = 'TEST_CASES_DIR'
 
-# Ensure /tmp/test_cases1 exists
+# Ensure TEST_CASES_DIR exists
 if not os.path.exists(tmp_test_cases_path):
     os.makedirs(tmp_test_cases_path)
 
-# Copy all files from local directory to /tmp/test_cases1
+# Copy all files from local directory to TEST_CASES_DIR
 if os.path.exists(local_test_cases_path):
     for filename in os.listdir(local_test_cases_path):
         full_path = os.path.join(local_test_cases_path, filename)
@@ -116,22 +117,22 @@ chmod +x /tmp/compiled_program  # Set executable permissions only if compilation
 echo "Compilation succeeded."
 
 # Check for test cases directory
-if [ ! -d "/tmp/test_cases1" ]; then
-    echo "Error: /tmp/test_cases1 directory not found."
+if [ ! -d "TEST_CASES_DIR" ]; then
+    echo "Error: TEST_CASES_DIR directory not found."
     exit 1
 fi
 
 # Check for input files
-if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
-    echo "Error: No input files found in /tmp/test_cases1."
+if [ -z "$(ls TEST_CASES_DIR/*.in 2>/dev/null)" ]; then
+    echo "Error: No input files found in TEST_CASES_DIR."
     exit 1
 fi
 
 # Run the program with each input file
-for input_file in /tmp/test_cases1/*.in; do
+for input_file in TEST_CASES_DIR/*.in; do
     echo "Running test case: $input_file"
     base_name=$(basename "$input_file" .in)
-    expected_output="/tmp/test_cases1/$base_name.out"
+    expected_output="TEST_CASES_DIR/$base_name.out"
     program_output="/tmp/program_output.txt"
 
     /tmp/compiled_program < "$input_file" > "$program_output"
