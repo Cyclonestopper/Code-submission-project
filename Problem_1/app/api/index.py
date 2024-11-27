@@ -159,7 +159,7 @@ echo "All test cases completed successfully."
 exit 0
 
 # Clean up files
-rm -f /tmp/compiled_program /tmp/program_output.txt /tmp/compile_errors.log
+# rm -f /tmp/compiled_program /tmp/program_output.txt /tmp/compile_errors.log
 """
     with open(script_name, 'w') as f:
         f.write(script_content)
