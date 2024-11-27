@@ -4,17 +4,11 @@
     {
       "src": "Problem_1/app/api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "Problem_2/app/api/index2.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
     { "src": "/", "dest": "Problem_1/app/api/index.py" },
     { "src": "/Problem_1", "dest": "Problem_1/app/api/index.py" },
     { "src": "/submit_code1", "dest": "Problem_1/app/api/index.py" },
-    { "src": "/Problem_2", "dest": "Problem_2/app/api/index2.py" },
-    { "src": "/submit_code2", "dest": "Problem_2/app/api/index2.py" }
   ]
 }
