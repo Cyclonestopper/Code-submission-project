@@ -180,10 +180,10 @@ def run_script(script_name, file_path):
         if result.returncode != 0:
             return {
                 "success": True,
-                "error": "Script returned a non-zero exit code",
+                "error": f"Non-zero exit code: {result.returncode}\nDetails: {result.stderr.strip()}",
                 "verdict": "Runtime error",
-                "details": result.stderr,
             }
+
 
         # Process script output
         output = result.stdout + result.stderr
