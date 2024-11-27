@@ -46,7 +46,7 @@ def home():
     return render_template('home.html')
 @app.route('/Problem_1')
 def problem_1():
-    return render_template('submit_code1.html')
+    return render_templated('submit_code1.html')
 @app.route('/submit_code1', methods=['POST'])
 def submit_code():
     if 'code_file' not in request.files:
@@ -76,7 +76,7 @@ def submit_code():
             result = run_script(script_name,file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
-                    return jsonify({"message": "Time limit exceeded: Your code took more than 5 seconds to run", "verdict": "TLE"})
+                    return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
                 elif result["verdict"]=="Compile error":
@@ -101,17 +101,14 @@ def generate_script(file_path):
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
-
-# Compile the C++ file
+chmod +x /tmp/compiled_program
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
-# Check if compilation succeeded
 if [ $? -ne 0 ]; then
     echo "Compilation failed. Errors:"
     cat /tmp/compile_errors.log
     exit 1
 fi
-chmod +x /tmp/compiled_program  # Set executable permissions only if compilation succeeded
 
 echo "Compilation succeeded."
 
@@ -121,13 +118,11 @@ if [ ! -d "/tmp/test_cases1" ]; then
     exit 1
 fi
 
-# Check for input files
 if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
     echo "Error: No input files found in /tmp/test_cases1."
     exit 1
 fi
 
-# Run the program with each input file
 for input_file in /tmp/test_cases1/*.in; do
     echo "Running test case: $input_file"
     base_name=$(basename "$input_file" .in)
@@ -141,12 +136,15 @@ for input_file in /tmp/test_cases1/*.in; do
         exit 1
     fi
 
-    # Add trailing newlines if missing
-    sed -i -e '$a' /tmp/program_output.txt
-    sed -i -e '$a' "$expected_output"
+    # Compare outputs
+    if [ -n "$(tail -c 1 /tmp/program_output.txt)" ]; then
+        echo "" >> /tmp/program_output.txt  # Add a newline if there isn't one
+    fi
 
-    # Compare program output with expected output
-    diff -b -w /tmp/program_output.txt "$expected_output"
+    if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
+        echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
+    fi
+    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
@@ -158,8 +156,8 @@ done
 echo "All test cases completed successfully."
 exit 0
 
-# Clean up files
-# rm -f /tmp/compiled_program /tmp/program_output.txt /tmp/compile_errors.log
+
+rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
 """
     with open(script_name, 'w') as f:
         f.write(script_content)
@@ -168,6 +166,13 @@ exit 0
     return script_name
 
 
+    script_name = generate_script(file_path)
+    print(f"Generated script with file path: {script_name}")
+
+    # Print the script contents for debugging purposes
+    with open(script_name, 'r') as f:
+        print(f"Script content: {f.read()}")
+
 import traceback
 
 import subprocess
@@ -175,7 +180,7 @@ import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
-
+    filename = os.path.basename(file_path)
     try:
         result = subprocess.run(
             ['bash', script_name, file_path],
@@ -185,40 +190,40 @@ def run_script(script_name, file_path):
             timeout=TIME_LIMIT
         )
 
-        # Process the output
+        # Printing both stdout and stderr
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
+        
         returncode = result.returncode
         if returncode != 0:
-            return {
-                "success": True,
-                "error": result.stderr,
-                "verdict": "Runtime error"
-            }
-        # Analyze script output for verdict
-        return {"success": True, "verdict": "Accepted"}
+            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
+
+        output = result.stdout + result.stderr
+        for line in output.splitlines():
+            if "Test case" in line and ":" in line:
+                parts = line.split(":")
+                test_case = parts[0].replace("Test case ", "").strip()
+                verdict1 = parts[1].strip()
+                if verdict1 == "Wrong Answer" and verdict == "Accepted":
+                    verdict = "Wrong Answer"
+                    
+        return {"success": True, "verdict": verdict}
 
     except subprocess.TimeoutExpired as e:
-        return {
-            "success": True,
-            "error": "The script took too long to execute.",
-            "verdict": "TLE"
-        }
-
-    except subprocess.CalledProcessError as e:
-        return {
-            "success": True,
-            "error": f"Script failed with error: {e.stderr}",
-            "verdict": "Runtime error"
-        }
-
-    except Exception as e:
-        error_message = f"Unexpected error occurred: {str(e)}\n{traceback.format_exc()}"
+        error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
         print(error_message)
+        return {"success": True, "verdict": "TLE", "error": error_message}
+    except subprocess.CalledProcessError as e:
+        error_message = f"Code submitted and tested successfully!"
         return {
             "success": True,
-            "error": error_message,
-            "verdict": "Unknown error"
+            "verdict": "Runtime error",
+            "error": error_message
         }
-
+    except Exception as e:
+        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
+        print(error_message)
+        return {"success": True, "error": error_message, "verdict": "Internal error "}
 
 
 if __name__ == '__main__':
