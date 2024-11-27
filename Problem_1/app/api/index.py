@@ -189,7 +189,7 @@ def run_script(script_name, file_path):
         returncode = result.returncode
         if returncode != 0:
             return {
-                "success": False,
+                "success": True,
                 "error": result.stderr,
                 "verdict": "Runtime error"
             }
@@ -198,14 +198,14 @@ def run_script(script_name, file_path):
 
     except subprocess.TimeoutExpired as e:
         return {
-            "success": False,
+            "success": True,
             "error": "The script took too long to execute.",
             "verdict": "TLE"
         }
 
     except subprocess.CalledProcessError as e:
         return {
-            "success": False,
+            "success": True,
             "error": f"Script failed with error: {e.stderr}",
             "verdict": "Runtime error"
         }
@@ -214,7 +214,7 @@ def run_script(script_name, file_path):
         error_message = f"Unexpected error occurred: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
         return {
-            "success": False,
+            "success": True,
             "error": error_message,
             "verdict": "Unknown error"
         }
