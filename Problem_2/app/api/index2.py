@@ -28,33 +28,15 @@ logging.basicConfig(level=logging.DEBUG)
 # Time limit (in seconds)
 TIME_LIMIT = 5
 
-# Ensure /tmp/test_cases1 exists
-# Copy all files from local directory to /tmp/test_cases1
-for folder_name in ["test_cases1", "test_cases2"]:
-    local_test_cases_path = os.path.join(os.getcwd(), folder_name)
-    tmp_test_cases_path = f"/tmp/{folder_name}"
-
-    if not os.path.exists(tmp_test_cases_path):
-        os.makedirs(tmp_test_cases_path)
-
-    if os.path.exists(local_test_cases_path):
-        for filename in os.listdir(local_test_cases_path):
-            full_path = os.path.join(local_test_cases_path, filename)
-            if os.path.isfile(full_path):
-                shutil.copy(full_path, tmp_test_cases_path)
-                print(f"Copied {full_path} to {tmp_test_cases_path}")
-    else:
-        print(f"Local test cases directory {local_test_cases_path} not found.")
-
 @app.route('/')
 def home():
     return render_template('home.html')
-@app.route('/Problem_1')
-def problem_1():
-    return render_template('submit_code1.html')  # You can create separate templates for different problems if needed.
+@app.route('/Problem_2')
+def problem_2():
+    return render_template('submit_code2.html')  # Template for Problem 2
 
-@app.route('/submit_code1', methods=['POST'])
-def submit_code():
+@app.route('/submit_code2', methods=['POST'])
+def submit_code2():
     if 'code_file' not in request.files:
         return jsonify({"error": "No file part"}), 400
 
@@ -77,7 +59,7 @@ def submit_code():
             if "#include <bits/stdc++.h>" in file_content:
                 return jsonify({"error": "File contains bits/stdc++.h header, which is not valid"}), 400
 
-        script_name = generate_script(file_path,'/tmp/test_cases1')
+        script_name = generate_script(file_path, "/tmp/test_cases2")  # Pass the test cases folder for Problem 2
         try:
             result = run_script(script_name, file_path)
             if result["success"]:
@@ -98,6 +80,7 @@ def submit_code():
             return jsonify({"error": str(e)}), 500
     else:
         return jsonify({"error": "Invalid file type. Only .cpp files are allowed."}), 400
+
 # Generate the bash script to compile and run the C++ code
 def generate_script(file_path, test_cases_dir):
     filename = os.path.basename(file_path)
@@ -118,20 +101,20 @@ chmod +x /tmp/compiled_program
 echo "Compilation succeeded."
 
 # Check for test cases directory
-if [ ! -d "/tmp/test_cases1" ]; then
-    echo "Error: /tmp/test_cases1 directory not found."
+if [ ! -d "/tmp/test_cases2" ]; then
+    echo "Error: /tmp/test_cases2 directory not found."
     exit 1
 fi
 
-if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
-    echo "Error: No input files found in /tmp/test_cases1."
+if [ -z "$(ls /tmp/test_cases2/*.in 2>/dev/null)" ]; then
+    echo "Error: No input files found in /tmp/test_cases2."
     exit 1
 fi
 
-for input_file in /tmp/test_cases1/*.in; do
+for input_file in /tmp/test_cases2/*.in; do
     echo "Running test case: $input_file"
     base_name=$(basename "$input_file" .in)
-    expected_output="/tmp/test_cases1/$base_name.out"
+    expected_output="/tmp/test_cases2/$base_name.out"
     program_output="/tmp/program_output.txt"
 
     /tmp/compiled_program < "$input_file" > "$program_output"
@@ -146,10 +129,10 @@ for input_file in /tmp/test_cases1/*.in; do
         echo "" >> /tmp/program_output.txt  # Add a newline if there isn't one
     fi
 
-    if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
-        echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
+    if [ -n "$(tail -c 1 /tmp/test_cases2/$base_name.out)" ]; then
+        echo "" >> /tmp/test_cases2/$base_name.out  # Add a newline if there isn't one
     fi
-    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
+    diff -b -w /tmp/program_output.txt /tmp/test_cases2/$base_name.out
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"

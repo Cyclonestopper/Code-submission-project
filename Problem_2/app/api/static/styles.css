@@ -1,0 +1,95 @@
+margin: 0;\
+padding: 0;\
+box-sizing: border-box;\
+\}\
+\
+/* Body styles */\
+body \{\
+font-family: 'Arial', sans-serif; /* Sets the font for the page */\
+background-color: #f4f4f4; /* Sets a light background color */\
+color: #333; /* Sets text color */\
+line-height: 1.6; /* Increases line height for readability */\
+padding: 20px; /* Adds padding around the body */\
+\}\
+\
+/* Header styles */\
+h1, h2, h3 \{\
+color: #333; /* Dark text for headers */\
+margin-bottom: 15px; /* Adds space below the headers */\
+\}\
+\
+/* Links */\
+a \{\
+color: #3498db; /* Link color */\
+text-decoration: none; /* Removes the underline from links */\
+\}\
+\
+a:hover \{\
+text-decoration: underline; /* Underlines links when hovered */\
+color: #2980b9; /* Darkens the link color on hover */\
+\}\
+\
+/* Container for content */\
+.container \{\
+width: 80%; /* Sets the width of the container */\
+max-width: 1200px; /* Limits the width on large screens */\
+margin: 0 auto; /* Centers the container horizontally */\
+padding: 20px; /* Adds padding inside the container */\
+background-color: #fff; /* White background for the content */\
+border-radius: 8px; /* Rounded corners */\
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */\
+\}\
+\
+/* Form styles */\
+form \{\
+display: flex;\
+flex-direction: column;\
+gap: 15px;\
+margin-bottom: 20px;\
+\}\
+\
+/* Input fields and buttons */\
+input[type="text"], input[type="file"], textarea \{\
+padding: 10px;\
+border: 1px solid #ccc;\
+border-radius: 4px;\
+font-size: 16px;\
+width: 100%;\
+box-sizing: border-box;\
+\}\
+\
+input[type="submit"] \{\
+padding: 10px 20px;\
+border: none;\
+background-color: #3498db; /* Blue color for buttons */\
+color: white;\
+font-size: 16px;\
+cursor: pointer;\
+border-radius: 4px;\
+transition: background-color 0.3s ease;\
+\}\
+\
+input[type="submit"]:hover \{\
+background-color: #2980b9; /* Darker blue on hover */\
+\}\
+\
+/* Footer styles */\
+footer \{\
+text-align: center;\
+margin-top: 40px;\
+padding: 20px;\
+background-color: #333;\
+color: #fff;\
+\}\
+\
+/* Responsive layout for smaller screens */\
+@media (max-width: 768px) \{\
+body \{\
+padding: 10px;\
+\}\
+\
+.container \{\
+width: 100%;\
+padding: 10px;\
+\}\
+\}\
