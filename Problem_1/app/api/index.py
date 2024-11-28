@@ -80,7 +80,7 @@ def submit_code():
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
                 elif result["verdict"]=="Compile error":
-                    return jsonify({"message":"Compilation failed","verdict":"Compilation error"})
+                    return jsonify({"message":result["error"],"verdict":"Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
