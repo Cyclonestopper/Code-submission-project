@@ -188,9 +188,9 @@ def run_script(script_name, file_path):
         # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
-        a={file_path}
         returncode = result.returncode
         if returncode == 2:
+            a=f"{file_path}"
             return {"success": True, "error": "Compilation failed, at file path "+a, "verdict": "Compile error"}
         elif returncode==1:
             return {"success":False, "error":"Internal error","verdict":"Internal error"}
