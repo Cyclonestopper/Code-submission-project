@@ -198,11 +198,11 @@ def run_script(script_name, file_path):
         returncode = result.returncode
         if returncode == 2:
             return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
-        else if returncode==1:
+        elif returncode==1:
             return {"success":False, "error":"Internal error","verdict":"Internal error"}
-        else if returncode==3:
+        elif returncode==3:
             return {"success":True, "error":"Runtime error","verdict":"Runtime error"}
-        else if returncode==4:
+        elif returncode==4:
             return {"success":False, "error":"Internal error","verdict":"Internal error"}
         output = result.stdout + result.stderr
         for line in output.splitlines():
