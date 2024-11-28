@@ -191,7 +191,7 @@ def run_script(script_name, file_path):
         
         returncode = result.returncode
         if returncode == 2:
-            return {"success": True, "error": "Compilation failed, at file path {file_path}", "verdict": "Compile error"}
+            return {"success": True, "error": "Compilation failed, at file path "{file_path}"", "verdict": "Compile error"}
         elif returncode==1:
             return {"success":False, "error":"Internal error","verdict":"Internal error"}
         elif returncode==3:
