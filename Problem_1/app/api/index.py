@@ -99,13 +99,12 @@ def generate_script(file_path):
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
-chmod +x /tmp/compiled_program
 g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
-    echo "Compilation failed. Errors:"
+    echo "Compilation failed"
     cat /tmp/compile_errors.log
-    exit 1
+    exit 2  # Return a specific exit code for compilation failure
 fi
 
 echo "Compilation succeeded."
@@ -128,11 +127,11 @@ for input_file in /tmp/test_cases1/*.in; do
     program_output="/tmp/program_output.txt"
 
     /tmp/compiled_program < "$input_file" > "$program_output"
-
     if [ $? -ne 0 ]; then
         echo "Runtime error for test case: $input_file"
-        exit 1
+        exit 3  # Specific exit code for runtime errors
     fi
+
 
     # Compare outputs
     if [ -n "$(tail -c 1 /tmp/program_output.txt)" ]; then
@@ -142,11 +141,13 @@ for input_file in /tmp/test_cases1/*.in; do
     if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
         echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
     fi
-    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
+    if [ ! -f "$expected_output" ]; then
+        echo "Error: Expected output file $expected_output not found."
+        exit 4
+    fi
 
-    if [ $? -eq 0 ]; then
-        echo "Test case $input_file: Accepted"
-    else
+    diff -b -w "$program_output" "$expected_output"
+    if [ $? -ne 0 ]; then
         echo "Test case $input_file: Wrong Answer"
     fi
 done
@@ -193,9 +194,14 @@ def run_script(script_name, file_path):
         print("STDERR:", result.stderr)
         
         returncode = result.returncode
-        if returncode != 0:
+        if returncode == 2:
             return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
-
+        else if returncode==1:
+            return {"success":False, "error":"Internal error","verdict":"Internal error"}
+        else if returncode==3:
+            return {"success":True, "error":"Runtime error","verdict":"Runtime error"}
+        else if returncode==4:
+            return {"success":False, "error":"Internal error","verdict":"Internal error"}
         output = result.stdout + result.stderr
         for line in output.splitlines():
             if "Test case" in line and ":" in line:
