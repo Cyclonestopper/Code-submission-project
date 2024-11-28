@@ -183,13 +183,7 @@ def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
     filename = os.path.basename(file_path)
     try:
-        result = subprocess.run(
-            ['bash', script_name, file_path],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=TIME_LIMIT
-        )
+        result = subprocess.run(['bash', script_name], capture_output=True, text=True, timeout=TIME_LIMIT)
 
         # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
