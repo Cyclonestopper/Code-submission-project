@@ -196,13 +196,13 @@ def run_script(script_name, file_path):
         error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
         return {"success": False, "verdict": "TLE", "error": error_message}
     except subprocess.CalledProcessError as e:
-        if result.returncode==1:
+        if code==1:
             return {"success":True, "verdict":"Compile error","error":"Compile error"}
-        elif result.returncode==2:
+        elif code==2:
             return {"success":True, "verdict":"Internal error","error":"Could not locate test cases folder"}
-        elif result.returncode==3:
+        elif code==3:
             return {"success":True, "verdict":"Internal error","error":"No input files found in the test cases folder"}
-        elif result.returncode==4:
+        elif code==4:
             return {"success":True, "verdict":"Runtime error","error":"Runtime error"}
         error_message = f"Runtime error: {e.stderr}"
         return {"success": False, "verdict": "Runtime error", "error": error_message}
