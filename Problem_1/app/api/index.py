@@ -194,7 +194,7 @@ def run_script(script_name, file_path):
     
     except subprocess.TimeoutExpired:
         error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
-        return {"success": False, "verdict": "TLE", "error": error_message}
+        return {"success": True, "verdict": "TLE", "error": error_message}
     except subprocess.CalledProcessError as e:
         if code==1:
             return {"success":True, "verdict":"Compile error","error":"Compile error"}
@@ -205,10 +205,10 @@ def run_script(script_name, file_path):
         elif code==4:
             return {"success":True, "verdict":"Runtime error","error":"Runtime error"}
         error_message = f"Runtime error: {e.stderr}"
-        return {"success": False, "verdict": "Runtime error", "error": error_message}
+        return {"success": True, "verdict": "Runtime error", "error": error_message}
     except Exception as e:
         error_message = f"Unknown error occurred: {str(e)}"
-        return {"success": False, "verdict": "Internal error", "error": error_message}
+        return {"success": True, "verdict": "Internal error", "error": error_message}
 
 
 if __name__ == '__main__':
