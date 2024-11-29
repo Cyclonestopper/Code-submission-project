@@ -145,7 +145,7 @@ for input_file in /tmp/test_cases1/*.in; do
     if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
         echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
     fi
-    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
+    diff -b -w <(sed 's/[[:space:]]*$//' /tmp/program_output.txt) <(sed 's/[[:space:]]*$//' /tmp/test_cases1/$base_name.out)
 
     if [ $? -eq 0 ]; then
         echo "Test case $input_file: Accepted"
@@ -170,34 +170,15 @@ import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
-    filename = os.path.basename(file_path)
     try:
         result = subprocess.run(
-        ['bash', script_name],
+            ['bash', script_name],
             check=True,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT
         )
-        return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
-        # Handle non-zero exit codes manually
-        if result.returncode != 0:
-            error_message = result.stderr or "Unknown error occurred"
-            if "Runtime error" in error_message:
-                return {"success": True, "verdict": "Runtime error", "error": error_message}
-            elif "Compilation failed" in error_message:
-                return {"success": True, "verdict": "Compile error", "error": error_message}
-            else:
-                return {"success": False, "verdict": "Error", "error": error_message}
-
-        # Printing both stdout and stderr
-        print("STDOUT:", result.stdout)
-        print("STDERR:", result.stderr)
-        
-        returncode = result.returncode
-        if returncode != 0:
-            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
-
+        # At this point, we know the script executed without any subprocess error.
         output = result.stdout + result.stderr
         for line in output.splitlines():
             if "Test case" in line and ":" in line:
@@ -206,24 +187,18 @@ def run_script(script_name, file_path):
                 verdict1 = parts[1].strip()
                 if verdict1 == "Wrong Answer" and verdict == "Accepted":
                     verdict = "Wrong Answer"
-                    
+        
         return {"success": True, "verdict": verdict}
-
-    except subprocess.TimeoutExpired as e:
+    
+    except subprocess.TimeoutExpired:
         error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
-        print(error_message)
-        return {"success": True, "verdict": "TLE", "error": error_message}
+        return {"success": False, "verdict": "TLE", "error": error_message}
     except subprocess.CalledProcessError as e:
-        error_message = f"Code submitted and tested successfully!"
-        return {
-            "success": True,
-            "verdict": "Runtime error",
-            "error": error_message
-        }
+        error_message = f"Runtime error: {e.stderr}"
+        return {"success": False, "verdict": "Runtime error", "error": error_message}
     except Exception as e:
-        error_message = f"Unknown error occurred: {str(e)}\n{traceback.format_exc()}"
-        print(error_message)
-        return {"success": True, "error": error_message, "verdict": "Internal error "}
+        error_message = f"Unknown error occurred: {str(e)}"
+        return {"success": False, "verdict": "Internal error", "error": error_message}
 
 
 if __name__ == '__main__':
