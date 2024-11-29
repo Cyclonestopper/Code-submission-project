@@ -173,7 +173,6 @@ def run_script(script_name, file_path):
     try:
         result = subprocess.run(
             ['bash', script_name],
-            check=True,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT
