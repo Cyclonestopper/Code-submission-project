@@ -173,13 +173,13 @@ def run_script(script_name, file_path):
     filename = os.path.basename(file_path)
     try:
         result = subprocess.run(
-            ['bash', script_name, file_path],
-            check=False,  # Prevent raising CalledProcessError
+        ['bash', script_name],
+            check=True,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT
         )
-
+        return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
         # Handle non-zero exit codes manually
         if result.returncode != 0:
             error_message = result.stderr or "Unknown error occurred"
