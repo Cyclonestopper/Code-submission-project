@@ -42,11 +42,13 @@ else:
     print(f"Local test cases directory {local_test_cases_path} not found.")
 
 @app.route('/')
-def home():
-    return render_template('home.html')
+def index():
+    return render_template('submit_code1.html')
+
 @app.route('/Problem_1')
 def problem_1():
-    return render_template('submit_code1.html')
+    return render_template('submit_code1.html')  # You can create separate templates for different problems if needed.
+
 @app.route('/submit_code1', methods=['POST'])
 def submit_code():
     if 'code_file' not in request.files:
@@ -73,14 +75,14 @@ def submit_code():
 
         script_name = generate_script(file_path)
         try:
-            result = run_script(script_name,file_path)
+            result = run_script(script_name, file_path)
             if result["success"]:
                 if result["verdict"] == "TLE":
                     return jsonify({"message": "Code submitted and tested successfully!", "verdict": "TLE"})
                 elif result["verdict"] == "Runtime error":
                     return jsonify({"message": result["error"], "verdict": "Runtime error"})
-                elif result["verdict"]=="Compile error":
-                    return jsonify({"message":result["error"],"verdict":"Compilation error"})
+                elif result["verdict"] == "Compile error":
+                    return jsonify({"message": "Compilation failed", "verdict": "Compilation error"})
                 else:
                     return jsonify({
                         "message": "Code submitted and tested successfully!",
@@ -101,12 +103,13 @@ def generate_script(file_path):
 
     script_content = f"""#!/bin/bash
 echo "Starting compilation of {file_path}"
-clang++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
+chmod +x /tmp/compiled_program
+g++ -std=c++17 -o "/tmp/compiled_program" "{file_path}" 2> /tmp/compile_errors.log
 
 if [ $? -ne 0 ]; then
-    echo "Compilation failed"
+    echo "Compilation failed. Errors:"
     cat /tmp/compile_errors.log
-    exit 2  # Return a specific exit code for compilation failure
+    exit 1
 fi
 
 echo "Compilation succeeded."
@@ -129,11 +132,11 @@ for input_file in /tmp/test_cases1/*.in; do
     program_output="/tmp/program_output.txt"
 
     /tmp/compiled_program < "$input_file" > "$program_output"
+
     if [ $? -ne 0 ]; then
         echo "Runtime error for test case: $input_file"
-        exit 3  # Specific exit code for runtime errors
+        exit 1
     fi
-
 
     # Compare outputs
     if [ -n "$(tail -c 1 /tmp/program_output.txt)" ]; then
@@ -143,13 +146,11 @@ for input_file in /tmp/test_cases1/*.in; do
     if [ -n "$(tail -c 1 /tmp/test_cases1/$base_name.out)" ]; then
         echo "" >> /tmp/test_cases1/$base_name.out  # Add a newline if there isn't one
     fi
-    if [ ! -f "$expected_output" ]; then
-        echo "Error: Expected output file $expected_output not found."
-        exit 4
-    fi
+    diff -b -w /tmp/program_output.txt /tmp/test_cases1/$base_name.out
 
-    diff -b -w "$program_output" "$expected_output"
-    if [ $? -ne 0 ]; then
+    if [ $? -eq 0 ]; then
+        echo "Test case $input_file: Accepted"
+    else
         echo "Test case $input_file: Wrong Answer"
     fi
 done
@@ -166,40 +167,28 @@ rm "/tmp/{base_name}" /tmp/program_output.txt /tmp/compile_errors.log
     os.chmod(script_name, 0o755)
     return script_name
 
-
-    script_name = generate_script(file_path)
-    print(f"Generated script with file path: {script_name}")
-
-    # Print the script contents for debugging purposes
-    with open(script_name, 'r') as f:
-        print(f"Script content: {f.read()}")
-
-import traceback
-
-import subprocess
 import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
     filename = os.path.basename(file_path)
     try:
-        result = subprocess.run(['bash', script_name], capture_output=True, text=True, timeout=TIME_LIMIT)
+        result = subprocess.run(
+            ['bash', script_name, file_path],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=TIME_LIMIT
+        )
 
         # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
         print("STDERR:", result.stderr)
+        
         returncode = result.returncode
-        if returncode == 2:
-            errors=""
-            with open('/tmp/compile_errors.log', 'r') as log:
-                errors = log.read()
-            return {"success": True, "error": errors, "verdict": "Compile error"}
-        elif returncode==1:
-            return {"success":False, "error":"Internal error","verdict":"Internal error"}
-        elif returncode==3:
-            return {"success":True, "error":"Runtime error","verdict":"Runtime error"}
-        elif returncode==4:
-            return {"success":False, "error":"Internal error","verdict":"Internal error"}
+        if returncode != 0:
+            return {"success": True, "error": "Compilation failed", "verdict": "Compile error", "details": result.stderr}
+
         output = result.stdout + result.stderr
         for line in output.splitlines():
             if "Test case" in line and ":" in line:
