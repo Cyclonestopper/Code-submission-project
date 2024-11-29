@@ -177,6 +177,8 @@ def run_script(script_name, file_path):
             text=True,
             timeout=TIME_LIMIT
         )
+        if returncode!=0:
+            return {"success":True, "verdict":"Runtime error","error":"Nonzero returncode"}
         # At this point, we know the script executed without any subprocess error.
         output = result.stdout + result.stderr
         for line in output.splitlines():
