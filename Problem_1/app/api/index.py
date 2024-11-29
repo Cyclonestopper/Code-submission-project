@@ -116,12 +116,12 @@ echo "Compilation succeeded."
 # Check for test cases directory
 if [ ! -d "/tmp/test_cases1" ]; then
     echo "Error: /tmp/test_cases1 directory not found."
-    exit 1
+    exit 2
 fi
 
 if [ -z "$(ls /tmp/test_cases1/*.in 2>/dev/null)" ]; then
     echo "Error: No input files found in /tmp/test_cases1."
-    exit 1
+    exit 3
 fi
 
 for input_file in /tmp/test_cases1/*.in; do
@@ -134,7 +134,7 @@ for input_file in /tmp/test_cases1/*.in; do
 
     if [ $? -ne 0 ]; then
         echo "Runtime error for test case: $input_file"
-        exit 1
+        exit 4
     fi
 
     # Compare outputs
@@ -170,15 +170,16 @@ import traceback
 
 def run_script(script_name, file_path):
     verdict = "Accepted"  # Ensure verdict is always initialized
+    code=0
     try:
         result = subprocess.run(
-            ['bash', script_name],
+            ['bash', script_name, file_path],
+            check=True,
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT
         )
-        if result.returncode!=0:
-            return {"success":True, "verdict":"Runtime error","error":"Nonzero returncode"}
+        code=result.returncode
         # At this point, we know the script executed without any subprocess error.
         output = result.stdout + result.stderr
         for line in output.splitlines():
@@ -195,6 +196,14 @@ def run_script(script_name, file_path):
         error_message = f"Time limit exceeded: The script took longer than {TIME_LIMIT} seconds to execute."
         return {"success": False, "verdict": "TLE", "error": error_message}
     except subprocess.CalledProcessError as e:
+        if result.returncode==1:
+            return {"success":True, "verdict":"Compile error","error":"Compile error"}
+        elif result.returncode==2:
+            return {"success":True, "verdict":"Internal error","error":"Could not locate test cases folder"}
+        elif result.returncode==3:
+            return {"success":True, "verdict":"Internal error","error":"No input files found in the test cases folder"}
+        elif result.returncode==4:
+            return {"success":True, "verdict":"Runtime error","error":"Runtime error"}
         error_message = f"Runtime error: {e.stderr}"
         return {"success": False, "verdict": "Runtime error", "error": error_message}
     except Exception as e:
