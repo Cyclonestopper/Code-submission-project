@@ -43,7 +43,7 @@ else:
 
 @app.route('/')
 def index():
-    return render_template('submit_code1.html')
+    return render_template('home.html')
 
 @app.route('/Problem_1')
 def problem_1():
