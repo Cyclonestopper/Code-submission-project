@@ -175,11 +175,21 @@ def run_script(script_name, file_path):
     try:
         result = subprocess.run(
             ['bash', script_name, file_path],
-            check=True,
+            check=False,  # Prevent raising CalledProcessError
             capture_output=True,
             text=True,
             timeout=TIME_LIMIT
         )
+
+        # Handle non-zero exit codes manually
+        if result.returncode != 0:
+            error_message = result.stderr or "Unknown error occurred"
+            if "Runtime error" in error_message:
+                return {"success": True, "verdict": "Runtime error", "error": error_message}
+            elif "Compilation failed" in error_message:
+                return {"success": True, "verdict": "Compile error", "error": error_message}
+            else:
+                return {"success": False, "verdict": "Error", "error": error_message}
 
         # Printing both stdout and stderr
         print("STDOUT:", result.stdout)
